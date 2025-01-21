@@ -131,10 +131,6 @@ redis와 kafka를 직접적으로 사용하는 application 모듈에 두 의존�
         <version>0.0.1-SNAPSHOT</version>
   </dependency>
   ```
-- {자식 module}/pom.xml
-  ```xml
-
-  ```
 
 ### 최종 구성 파일
 - [루트 - pom.xml](pom.xml)
@@ -151,6 +147,57 @@ redis와 kafka를 직접적으로 사용하는 application 모듈에 두 의존�
 ┠ 📂 `자식 모듈 2`: **module-redis**(Maven)  
 ┃ ┖ 📄 pom.xml  
 ┖━━━━━━━━━━━━━━━━━━━━━━━━━
+</details>
+
+# Swagger 설정
+<details>
+<summary>펼치기/접기</summary>
+<br>
+
+## dependency 추가
+
+springfox 2.9.2 버전의 swagger2 라이브러리를 사용한다.
+
+- module-application/pom.xml
+  ```xml
+  <dependency>
+    <groupId>io.springfox</groupId>
+    <artifactId>springfox-swagger2</artifactId>
+    <version>2.9.2</version>
+  </dependency>
+  <dependency>
+    <groupId>io.springfox</groupId>
+    <artifactId>springfox-swagger-ui</artifactId>
+    <version>2.9.2</version>
+  </dependency>
+  ```
+
+자바 설정파일
+- [SwaggerConfig.java](module-application%2Fsrc%2Fmain%2Fjava%2Fcom%2Ffc%2Fmoduleapplication%2Fconfig%2FSwaggerConfig.java)
+  ```java
+  @Configuration
+  @EnableSwagger2
+  public class SwaggerConfig {
+    @Bean
+    public Docket api() {
+      return new Docket(DocumentationType.SWAGGER_2)
+      .select()
+      .paths(PathSelectors.any())
+      .apis(RequestHandlerSelectors.basePackage("com.fc.moduleapplication.controller"))
+      .build().apiInfo(apiInfo());
+    }
+  
+    private ApiInfo apiInfo() {
+        String documentDesc = "LowPriceWithRedis API Document";
+        return new ApiInfoBuilder()
+                .title("LowPriceWithRedis API")
+                .description(documentDesc)
+                .version("1.0")
+                .build();
+    }
+  }
+  ```
+- 접속 URL: [localhost:8080/swagger-ui.html](localhost:8080/swagger-ui.html)
 </details>
 
 # [Ch01. 이커머스 비즈니스 이해.md](Ch01.%20%EC%9D%B4%EC%BB%A4%EB%A8%B8%EC%8A%A4%20%EB%B9%84%EC%A6%88%EB%8B%88%EC%8A%A4%20%EC%9D%B4%ED%95%B4.md)
