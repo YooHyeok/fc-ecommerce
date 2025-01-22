@@ -1,6 +1,7 @@
 package com.fc.moduleapplication.service;
 
 import com.fc.moduleapplication.vo.Product;
+import com.fc.moduleapplication.vo.ProductGroup;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations;
@@ -54,5 +55,29 @@ public class LowestPriceServiceImpl implements LowestPriceService {
         ZSetOperations zSetOperations = redisTemplate.opsForZSet();
         zSetOperations.add(product.getProductGroupId(), product.getProductId(), product.getPrice()); // key, value, score 순서로 product 정보를 추가한다.
         return zSetOperations.rank(product.getProductGroupId(), product.getProductId()).intValue(); // 추가한 상품 랭킹 조회
+    }
+
+    /**
+     * <h1>상품 그룹 추가 및 추가된 상품 그룹의 상품 목록 갯수 조회</h1>
+     * <pre>
+     *     Redis (ZSET-ZADD,ZCARD) ZADD 추가 및 ZCARD 조회
+     *       1. productGroupId(key), productId(member), price(score) 데이터를 추가한다.
+     *       2. productGroupId(key) 기준 product 목록 갯수를 조회한다.
+     *     Redis ZSET 추가
+     *       - Redis 추가 메소드: add(상품그룹Id(key), 상품Id(member), 가격(score))
+     *       - Redis 추가 명령: zadd {상품그룹Id(key)} {가격(score)} {상품Id(member)}
+     *     Redis ZCARD Key별 Member 갯수 조회
+     *       - Redis 순위 조회 메소드: zCard(상품그룹Id(key))
+     *       - Redis 순위 조회 명령: zcard {상품그룹Id(key)}
+     * </pre>
+     * @param productGroup
+     * @return
+     */
+    @Override
+    public int setNewProductGroup(ProductGroup productGroup) {
+        Product product = productGroup.getProductList().get(0); // 리스트에 1개의 product group 데이터만 구성하여 넘겨받으므로 첫번째 product 데이터만 추출
+        ZSetOperations zSetOperations = redisTemplate.opsForZSet();
+        zSetOperations.add(product.getProductGroupId(), product.getProductId(), product.getPrice());
+        return zSetOperations.zCard(productGroup.getProductGroupId()).intValue(); // 프로덕트 그룹 key에 해당하는
     }
 }
