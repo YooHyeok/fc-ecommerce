@@ -7,8 +7,6 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.Set;
 
 @Service
@@ -79,5 +77,30 @@ public class LowestPriceServiceImpl implements LowestPriceService {
         ZSetOperations zSetOperations = redisTemplate.opsForZSet();
         zSetOperations.add(product.getProductGroupId(), product.getProductId(), product.getPrice());
         return zSetOperations.zCard(productGroup.getProductGroupId()).intValue(); // 프로덕트 그룹 key에 해당하는
+    }
+
+    /**
+     * <h1>키워드 추가 및 추가된 키워드의 상품 그룹의 매칭값(score) 순위 조회</h1>
+     * <pre>
+     *     Redis (ZSET-ZADD,ZCARD) ZADD 추가 및 ZCARD 조회
+     *       1. keyword(key), productGroupId(member), 매칭값(score) 데이터를 추가한다.
+     *       2. keyword(key) 기준 product 목록 갯수를 조회한다.
+     *     Redis ZSET 추가
+     *       - Redis 추가 메소드: add(상품키워드(key), 상품그룹Id(member), 매칭값(score))
+     *       - Redis 추가 명령: zadd {상품키워드(key)} {매칭값(score)} {상품그룹Id(member)}
+     *     Redis ZSET 순위 조회
+     *       - Redis 순위 조회 메소드: rank(키워드(key), 상품그룹Id(member))
+     *       - Redis 순위 조회 명령: zrank {키워드(key)} {매칭값(score)}}
+     * </pre>
+     * @param keyword
+     * @param productGroupId
+     * @param scroe
+     * @return
+     */
+    @Override
+    public int setNewProductGroupToKeyword(String keyword, String productGroupId, double scroe) {
+        ZSetOperations zSetOperations = redisTemplate.opsForZSet();
+        zSetOperations.add(keyword, productGroupId, scroe);
+        return zSetOperations.rank(keyword, productGroupId).intValue();
     }
 }
