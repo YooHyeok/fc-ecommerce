@@ -1,6 +1,7 @@
 package com.fc.moduleapplication.controller;
 
 import com.fc.moduleapplication.service.LowestPriceService;
+import com.fc.moduleapplication.vo.Keyword;
 import com.fc.moduleapplication.vo.Product;
 import com.fc.moduleapplication.vo.ProductGroup;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +21,7 @@ public class LowestPriceController {
 
     private final LowestPriceService lowestPriceService;
     /**
-     * <h5>Redis 상품 데이터 조회</h5>
+     * <h1>Redis 상품 데이터 조회</h1>
      * <pre>
      *      ProductGroupId key 값을 기준으로 조회한다.
      *      0위부터 9위까지 범위로 10개의 product를 조회한다.
@@ -35,7 +36,7 @@ public class LowestPriceController {
     }
 
     /**
-     * <h5>Redis 상품 데이터 추가 및 추가된 상품 랭킹 반환</h5>
+     * <h1>Redis 상품 데이터 추가 및 추가된 상품 랭킹 반환</h1>
      * <pre>
      *      ProductGroupId, ProductId, Price 정보를 추가한다.
      *      ProductGroupId, ProductId 기준 Price의 순위를 조회하여 반환한다.
@@ -54,13 +55,46 @@ public class LowestPriceController {
         return lowestPriceService.setNewProduct(product);
     }
 
+    /**
+     * <h1>상품 그룹 추가 및 추가된 상품 그룹의 상품 목록 갯수 조회</h1>
+     * <pre>
+     *     productGroupId, productList[0]{productId, price} 정보를 추가한다.
+     *     ProductGroupId기준 Product의 개수를 조회하여 반환한다.
+     * </pre>
+     * @param productGroup
+     * @return
+     */
     @PutMapping("/productGroup")
     public int setNewProductGroup(@RequestBody ProductGroup productGroup) {
         return lowestPriceService.setNewProductGroup(productGroup);
     }
 
+    /**
+     * <h1>키워드 추가 및 추가된 키워드의 상품 그룹의 매칭값(score) 순위 조회</h1>
+     * <pre>
+     *
+     * </pre>
+     * @param keyword
+     * @param productGroupId
+     * @param scroe
+     * @return
+     */
     @PutMapping("/keyword")
     public int setNewProductGroupToKeyword(String keyword, String productGroupId, int scroe) {
         return lowestPriceService.setNewProductGroupToKeyword(keyword, productGroupId, scroe);
+    }
+
+    /**
+     * <h1>키워드 기준 상품 그룹 목록(10개) 조회 및 상품 그룹 기준 상품 목록(10개) 조회</h1>
+     * <pre>
+     *     키워드 기준 상품 그룹 목록(10개) 정보 조회
+     *     10개의 상품 그룹 기준 상품 목록(10개) 정보 조회
+     * </pre>
+     * @param keyword
+     * @return
+     */
+    @GetMapping("/productPrice/lowest")
+    public Keyword getLowestPriceProductByKeyword(String keyword) {
+        return lowestPriceService.getLowestPriceProductByKeyword(keyword);
     }
 }
