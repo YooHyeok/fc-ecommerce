@@ -14,4 +14,6 @@ public interface LowestPriceService {
     int setNewProductGroup(ProductGroup productGroup);
 
     int setNewProductGroupToKeyword(String keyword, String productGroupId, double 매칭값);
+
+    Keyword getLowestPriceProductByKeyword(String keyword);
 }

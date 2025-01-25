@@ -1,5 +1,7 @@
 package com.fc.moduleapplication.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fc.moduleapplication.vo.Keyword;
 import com.fc.moduleapplication.vo.Product;
 import com.fc.moduleapplication.vo.ProductGroup;
 import lombok.RequiredArgsConstructor;
@@ -7,7 +9,8 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.stereotype.Service;
 
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -102,5 +105,51 @@ public class LowestPriceServiceImpl implements LowestPriceService {
         ZSetOperations zSetOperations = redisTemplate.opsForZSet();
         zSetOperations.add(keyword, productGroupId, scroe);
         return zSetOperations.rank(keyword, productGroupId).intValue();
+    }
+
+    @Override
+    public Keyword getLowestPriceProductByKeyword(String keyword) {
+        List<ProductGroup> productGroupList = getProductGroupUsingKeyword(keyword);
+        Keyword returnInfo = new Keyword();
+        returnInfo.setProductGroupList(productGroupList);
+        return returnInfo;
+    }
+
+    private List<ProductGroup> getProductGroupUsingKeyword(String keyword) {
+        ZSetOperations zSetOperations = redisTemplate.opsForZSet();
+        /* keyword 기준 productGroup 10개 조회 */
+        Set productGroupIdSet = zSetOperations.range(keyword, 0, 9); // productGroupId 목록 조회
+        List<String> productGroupIdList = List.copyOf(productGroupIdSet);
+        List<ProductGroup> returnInfo = new ArrayList<>();
+        for (final String productGroupId : productGroupIdList) {
+
+            /* Loop - ProductGroup 기준 Product,Price 10개 조회 */
+            Set productAndPriceSet = zSetOperations.rangeWithScores(productGroupId, 0, 9);
+            Iterator iterator = productAndPriceSet.iterator();
+
+            /**
+             * Loop - ProductGroupList에 ProductGroup 추가.
+             * 직렬화된 값들을 Map으로 변환.
+             * Product에 id, price 할당.
+             * ProductGroup의 ProductList에 Product 추가
+             * ProductGroupList에 ProductGroup 추가.
+             */
+            ProductGroup productGroup = new ProductGroup();
+            while (iterator.hasNext()) {
+                ObjectMapper objectMapper = new ObjectMapper();
+                Map<String, String> productPriceMap = objectMapper.convertValue(iterator.next(), Map.class);
+                /* Product에 id, price 할당. */
+                Product product = new Product();
+                product.setProductGroupId(productGroupId);
+                product.setProductId(productPriceMap.get("value")); // [redis]value: productId
+                product.setPrice(Integer.parseInt(productPriceMap.get("score")));// [redis]score: price
+                /* ProductGroup의 ProductList에 Product 추가 */
+                productGroup.setProductGroupId(productGroupId);
+                productGroup.getProductList().add(product);
+                /* List에 ProductGroup 추가. */
+                returnInfo.add(productGroup);
+            }
+        }
+        return returnInfo;
     }
 }
