@@ -117,8 +117,8 @@ public class LowestPriceServiceImpl implements LowestPriceService {
 
     private List<ProductGroup> getProductGroupUsingKeyword(String keyword) {
         ZSetOperations zSetOperations = redisTemplate.opsForZSet();
-        /* keyword 기준 productGroup 10개 조회 */
-        Set productGroupIdSet = zSetOperations.range(keyword, 0, 9); // productGroupId 목록 조회
+        /* keyword 기준 productGroup 10개 가격기준 내림차순 조회 */
+        Set productGroupIdSet = zSetOperations.reverseRange(keyword, 0, 9); // productGroupId 목록 조회
         List<String> productGroupIdList = List.copyOf(productGroupIdSet);
         List<ProductGroup> returnInfo = new ArrayList<>();
         for (final String productGroupId : productGroupIdList) {
@@ -135,28 +135,29 @@ public class LowestPriceServiceImpl implements LowestPriceService {
              * ProductGroupList에 ProductGroup 추가.
              */
             ProductGroup productGroup = new ProductGroup();
+//            productGroup.setProductList(new ArrayList<>());
             while (iterator.hasNext()) {
                 ObjectMapper objectMapper = new ObjectMapper();
-                Map<String, String> productPriceMap = objectMapper.convertValue(iterator.next(), Map.class);
+                Map<String, Object> productPriceMap = objectMapper.convertValue(iterator.next(), Map.class);
                 /* Product에 id, price 할당. */
                 Product product = new Product();
                 product.setProductGroupId(productGroupId);
-                product.setProductId(productPriceMap.get("value")); // [redis]value: productId
-                product.setPrice(Integer.parseInt(productPriceMap.get("score")));// [redis]score: price
+                product.setProductId(productPriceMap.get("value").toString()); // [redis]value: productId
+                product.setPrice(Double.valueOf(productPriceMap.get("score").toString()).intValue());// [redis]score: price
                 /* ProductGroup의 ProductList에 Product 추가 */
-                productGroup.setProductGroupId(productGroupId);
                 productGroup.getProductList().add(product);
-                /* List에 ProductGroup 추가. */
-                returnInfo.add(productGroup);
             }
+            productGroup.setProductGroupId(productGroupId);
+            /* ProductGroupList에 ProductGroup 추가. */
+            returnInfo.add(productGroup);
         }
         return returnInfo;
     }
 
     private List<ProductGroup> getProductGroupUsingKeywordRefactor(String keyword) {
         ZSetOperations zSetOperations = redisTemplate.opsForZSet();
-        /* keyword 기준 productGroup 10개 조회 */
-        Set<String> productGroupIdSet = zSetOperations.range(keyword, 0, 9); // productGroupId 목록 조회
+        /* keyword 기준 productGroup 10개 가격기준 내림차순 조회 */
+        Set<String> productGroupIdSet = zSetOperations.reverseRange(keyword, 0, 9); // productGroupId 목록 조회
         List<ProductGroup> returnInfo = new ArrayList<>();
         for (final String productGroupId : productGroupIdSet) {
 
@@ -173,7 +174,7 @@ public class LowestPriceServiceImpl implements LowestPriceService {
                 Product product = new Product();
                 product.setProductGroupId(productGroupId);
                 product.setProductId((String) stringTypedTuple.getValue());
-                product.setPrice((int) (double) stringTypedTuple.getScore());
+                product.setPrice(stringTypedTuple.getScore().intValue());
                 return product;
             }).collect(Collectors.toList());
             /* ProductGroup의 ProductList에 Product 추가 */
